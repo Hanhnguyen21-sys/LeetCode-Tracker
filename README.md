@@ -12,4 +12,4 @@ This app fetches company-specific problem sets directly from open-source GitHub 
 
 ## 📂 Data Source
 Problem datasets are fetched dynamically from the open-source repository:
-* **Source:** [leetcode-company-wise-problemsPublic](https://github.com/liquidslr/leetcode-company-wise-problemsPublic) by [@liquidslr](https://github.com/liquidslr)
+* **Source:** [leetcode-company-wise-problems](https://github.com/liquidslr/leetcode-company-wise-problemsPublic) by [@liquidslr](https://github.com/liquidslr)
