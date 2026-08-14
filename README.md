@@ -9,3 +9,7 @@ This app fetches company-specific problem sets directly from open-source GitHub 
 * 🔗 **Direct LeetCode Links**: One-click access to problem pages on LeetCode.
 * 📈 **Progress Tracking**: Interactive checkboxes and live statistics dashboard to keep you on track.
 * ⚡ **Live Deployment**: Built to run seamlessly on Streamlit Community Cloud.
+
+## 📂 Data Source
+Problem datasets are fetched dynamically from the open-source repository:
+* **Source:** [leetcode-company-wise-problemsPublic](https://github.com/liquidslr/leetcode-company-wise-problemsPublic) by [@liquidslr](https://github.com/liquidslr)
