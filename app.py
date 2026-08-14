@@ -19,10 +19,25 @@ st.set_page_config(page_title="LeetCode Study Roadmap", page_icon="⚡", layout=
 # =====================================================================
 # Helper Functions
 # =====================================================================
+def get_leetcode_url(prob: dict) -> str:
+    """Helper to construct a valid LeetCode URL."""
+    raw_url = prob.get("URL") or prob.get("Link") or ""
+    raw_url = raw_url.strip()
+
+    if raw_url.startswith("http"):
+        return raw_url
+    elif raw_url:
+        return f"https://leetcode.com/problems/{raw_url.strip('/')}/"
+    else:
+        title = prob.get("Title") or prob.get("ID") or "leetcode"
+        slug = title.lower().replace(" ", "-")
+        return f"https://leetcode.com/problems/{slug}/"
+
+
 @st.cache_data(ttl=3600)
 def fetch_company_problems(company_name: str):
-    """Fetches questions directly from GitHub CSV files."""
-    company_folder = company_name.strip()
+    """Fetches questions directly from GitHub CSV files with name formatting."""
+    company_folder = company_name.strip().title()
     encoded_filename = "5.%20All.csv"
 
     raw_url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/{company_folder}/{encoded_filename}"
@@ -31,14 +46,21 @@ def fetch_company_problems(company_name: str):
         headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
     response = requests.get(raw_url, headers=headers)
+
+    # Fallback to 'master' branch if 'main' returns 404
     if response.status_code == 404:
         raw_url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/master/{company_folder}/{encoded_filename}"
         response = requests.get(raw_url, headers=headers)
 
+    # Fallback to exact user input (e.g. all caps 'IBM')
     if response.status_code == 404:
+        company_folder = company_name.strip()
+        raw_url = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main/{company_folder}/{encoded_filename}"
+        response = requests.get(raw_url, headers=headers)
+
+    if response.status_code != 200:
         return []
 
-    response.raise_for_status()
     csv_lines = response.text.splitlines()
     return list(csv.DictReader(csv_lines))
 
@@ -87,7 +109,7 @@ def build_mixed_roadmap(problems: list, questions_per_day: int = 3) -> dict:
                 "id": f"day_{day}_q_{idx}",
                 "title": p.get("Title") or p.get("ID") or p.get("Name"),
                 "difficulty": p.get("Difficulty", "N/A"),
-                "url": p.get("URL") or p.get("Link", "#"),
+                "url": get_leetcode_url(p),
             }
             for idx, p in enumerate(day_batch, 1)
         ]
@@ -96,13 +118,12 @@ def build_mixed_roadmap(problems: list, questions_per_day: int = 3) -> dict:
 
 
 # =====================================================================
-# Sidebar Configuration
+# Sidebar & Progress Storage Setup
 # =====================================================================
 st.sidebar.title("🎯 Preparation Setup")
 company = st.sidebar.text_input("Enter Company Name", value="Meta")
 pace = st.sidebar.slider("Questions per Day", min_value=1, max_value=5, value=3)
 
-# Load / Save Completed State
 PROGRESS_FILE = f"{company.lower().strip()}_progress.json"
 
 if "completed_questions" not in st.session_state:
@@ -161,7 +182,7 @@ if company:
         )
         st.divider()
 
-        # Tabs for Dashboard Views
+        # Dashboard Tabs
         tab1, tab2 = st.tabs(["🗓️ Daily Schedule", "📊 All Questions View"])
 
         # -----------------------------------------------------------------
@@ -171,7 +192,6 @@ if company:
             st.subheader("Your Daily Action Plan")
 
             for day_label, questions in schedule.items():
-                # Count day completion
                 day_completed = sum(
                     1
                     for q in questions
@@ -188,13 +208,13 @@ if company:
                             q["title"] in st.session_state.completed_questions
                         )
 
-                        # Checkbox interaction
+                        # Checkbox interaction with hidden label (Accessibility fix)
                         checked = col1.checkbox(
-                                f"Complete {q['title']}",
-                                value=is_checked,
-                                key=f"cb_{day_label}_{q['title']}",
-                                label_visibility="collapsed",
-)
+                            f"Mark {q['title']} as complete",
+                            value=is_checked,
+                            key=f"cb_{day_label}_{q['title']}",
+                            label_visibility="collapsed",
+                        )
 
                         if checked != is_checked:
                             if checked:
@@ -206,22 +226,18 @@ if company:
                             save_progress()
                             st.rerun()
 
-                        # Difficulty Badge Colors
-                        # Extract and normalize difficulty
+                        # Diff colors & formatted text labels
                         diff_raw = q["difficulty"].strip().upper()
-
                         if "EASY" in diff_raw:
-                            display_diff = "Easy"
-                            color = "green"
+                            display_diff, color = "Easy", "green"
                         elif "HARD" in diff_raw:
-                            display_diff = "Hard"
-                            color = "red"
+                            display_diff, color = "Hard", "red"
                         else:
-                            display_diff = "Medium"
-                            color = "orange"
+                            display_diff, color = "Medium", "orange"
 
+                        # Integrated clickable link and colored text
                         col2.markdown(
-                            f"**{q['title']}** &nbsp;&nbsp; :{color}[**{display_diff}**]",
+                            f"[{q['title']}]({q['url']}) &nbsp;&nbsp; :{color}[**{display_diff}**]",
                             unsafe_allow_html=True,
                         )
 
@@ -239,39 +255,34 @@ if company:
                         search_query.lower() in q["title"].lower()
                         or search_query.lower() in q["difficulty"].lower()
                     ):
-                        c1, c2, c3 = st.columns([0.1, 0.65, 0.25])
-
-                        is_done = q["title"] in st.session_state.completed_questions
+                        c1, c2, c3 = st.columns([0.05, 0.7, 0.25])
+                        is_done = (
+                            q["title"] in st.session_state.completed_questions
+                        )
 
                         done = c1.checkbox(
-                            f"Complete {q['title']}",
+                            f"Mark {q['title']} as complete",
                             value=is_done,
                             key=f"all_{q['title']}",
                             label_visibility="collapsed",
                         )
-
                         if done != is_done:
                             if done:
                                 st.session_state.completed_questions.add(q["title"])
                             else:
-                                st.session_state.completed_questions.discard(q["title"])
+                                st.session_state.completed_questions.discard(
+                                    q["title"]
+                                )
                             save_progress()
                             st.rerun()
 
-                        # Title
-                        c2.write(f"**{q['title']}**")
-
-                        # Difficulty
                         diff_raw = q["difficulty"].strip().upper()
-
                         if "EASY" in diff_raw:
-                            display_diff = "Easy"
-                            color = "green"
+                            display_diff, color = "Easy", "green"
                         elif "HARD" in diff_raw:
-                            display_diff = "Hard"
-                            color = "red"
+                            display_diff, color = "Hard", "red"
                         else:
-                            display_diff = "Medium"
-                            color = "orange"
+                            display_diff, color = "Medium", "orange"
 
+                        c2.markdown(f"[{q['title']}]({q['url']})")
                         c3.markdown(f":{color}[**{display_diff}**]")
