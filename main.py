@@ -4,13 +4,14 @@ import math
 import os
 import requests
 from dotenv import load_dotenv
-
+import streamlit as st
 load_dotenv()
 
 REPO_OWNER = os.getenv("REPO_OWNER", "liquidslr")
 REPO_NAME = os.getenv("REPO_NAME", "leetcode-company-wise-problemsPublic")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
+@st.cache_data(ttl=3600)
 
 def fetch_company_problems(company_name: str, csv_file_name: str = "5. All.csv"):
     """Fetches questions directly from GitHub CSV files."""
