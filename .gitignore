@@ -1,0 +1,62 @@
+# ==========================================
+# 1. Environment & Credentials (CRITICAL)
+# ==========================================
+.env
+.env.local
+.env.*
+
+# ==========================================
+# 2. Local App Data / User Progress
+# ==========================================
+# Keeps your local JSON roadmap & tracking files out of git
+*_progress.json
+*_roadmap.json
+
+# ==========================================
+# 3. Python Virtual Environments
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# 4. Python Cache & Build Artifacts
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# 5. Streamlit Cache & Settings
+# ==========================================
+.streamlit/secrets.toml
+
+# ==========================================
+# 6. IDEs and System Files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
